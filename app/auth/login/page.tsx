@@ -2,7 +2,7 @@
 
 import { FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "@/lib/supabase/auth";
+import { login } from "@/lib/api/admin";
 
 export default function LoginPage() {
 	const router = useRouter();
@@ -17,7 +17,7 @@ export default function LoginPage() {
 		try {
 			const user = await login(email, password);
 			console.log("Logged in user:", user);
-			router.push("/dashboard");
+			router.push("/home");
 		} catch (error) {
 			console.error("Login error:", error);
 		}

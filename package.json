@@ -7,7 +7,8 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "eslint",
-		"seed": "tsx db/seed.ts"
+		"seed": "tsx db/seed.ts",
+		"setup": "tsx db/setupRLS.ts"
 	},
 	"dependencies": {
 		"@emotion/cache": "^11.14.0",

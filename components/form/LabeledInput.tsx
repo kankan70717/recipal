@@ -1,19 +1,32 @@
+import Label from "./Label";
+
 const LabeledInput = ({
-	label,
-	id,
+	selectedValue,
+	setSelected,
 	type = "text",
-	...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { label: string; id: string }) => {
+	placeholder,
+	labelName,
+	className
+}: {
+	selectedValue: string;
+	setSelected: (value: string) => void;
+	type?: string;
+	placeholder?: string;
+	labelName?: string;
+	className?: string
+}) => {
 	return (
-		<div className="flex flex-col gap-2">
-			<label htmlFor={id} className="font-medium text-gray-700">
-				{label}
-			</label>
+		<div className={`flex flex-wrap items-center justify-around gap-2 ${className}`}>
+			<Label key={`${labelName}-label`} htmlFor={`${labelName}-input-field`}>{labelName}</Label>
 			<input
-				id={id}
+				id={`${labelName}-input-field`}
+				name={labelName}
 				type={type}
-				className="px-3 py-1 border border-gray-300 rounded-lg"
-				{...props}
+				placeholder={placeholder}
+				value={selectedValue}
+				onChange={(e) => setSelected(e.target.value)}
+				className="flex-1 border border-primary-500 rounded-full px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
+				autoComplete="off"
 			/>
 		</div>
 	);

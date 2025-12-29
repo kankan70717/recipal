@@ -137,11 +137,11 @@ function InstallPrompt() {
 
 export default function Home() {
 	return (
-		<div className="flex">
+		<div className="flex gap-5 flex-col">
 			<h1>Landing Page ????</h1>
 			<Link href="/auth/signup">Sign Up</Link>
 			<Link href="/auth/login">Log In</Link>
-			<Link href="/dashboard">Dashboard</Link>
+			<Link href="/home">Home</Link>
 			<PushNotificationManager />
 			<InstallPrompt />
 		</div>

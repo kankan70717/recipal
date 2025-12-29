@@ -7,17 +7,19 @@ import {
   timestamp,
   primaryKey,
   json,
+  pgView,
 } from "drizzle-orm/pg-core";
 
 /* ****************** */
-/* enums */
+/* Enum recipe status */
 /* ****************** */
-export const recipeStatusEnum = pgEnum("recipe_status_enum", [
-  "active",
-  "inactive",
-  "pending",
-]);
+export const recipeStatusList = ["active", "inactive", "pending"] as const;
+export const recipeStatusEnum = pgEnum("recipe_status_enum", recipeStatusList);
+export type RecipeStatus = InferEnum<typeof recipeStatusEnum>;
 
+/* ****************** */
+/* Enum unit */
+/* ****************** */
 export const unitEnum = pgEnum("unit_enum", [
   // Weight
   "mg",
@@ -33,13 +35,22 @@ export const unitEnum = pgEnum("unit_enum", [
   "pcs",
   "dozen",
 ]);
+export type EnumUnit = InferEnum<typeof unitEnum>;
 
+/* ****************** */
+/* Enum role */
+/* ****************** */
 export const roleList = ["admin", "manager", "staff"] as const;
 export const roleEnum = pgEnum("role_enum", roleList);
 export type Role = InferEnum<typeof roleEnum>;
-
-// runtime バリデーション用配列
 export const allowedRoles: Role[] = [...roleList];
+
+/* ****************** */
+/* Enum recipe type */
+/* ****************** */
+export const recipeTypeList = ["dish", "prep", "ingredient"] as const;
+export const recipeTypeEnum = pgEnum("recipe_type_enum", recipeTypeList);
+export type RecipeType = InferEnum<typeof recipeTypeEnum>;
 
 /* ****************** */
 /* stores */
@@ -99,9 +110,9 @@ export const allergen_groups = pgTable("allergen_groups", {
 });
 
 /* ****************** */
-/* ingredients */
+/* ingredient */
 /* ****************** */
-export const ingredients = pgTable("ingredients", {
+export const ingredient = pgTable("ingredient", {
   id: varchar("id", { length: 256 })
     .default(sql`gen_random_uuid()`)
     .primaryKey(),
@@ -111,7 +122,7 @@ export const ingredients = pgTable("ingredients", {
   store_id: varchar("store_id", { length: 256 })
     .notNull()
     .references(() => stores.id),
-  ingredient_category_id: varchar("ingredient_category_id", { length: 256 })
+  category_id: varchar("category_id", { length: 256 })
     .notNull()
     .references(() => ingredient_categories.id),
   image_url: varchar("image_url", { length: 2083 }),
@@ -121,9 +132,6 @@ export const ingredients = pgTable("ingredients", {
   purchase_amount: decimal("purchase_amount", { mode: "number" }).notNull(),
   purchase_unit: unitEnum("purchase_unit").notNull(),
   purchase_price: decimal("purchase_price", { mode: "number" }).notNull(),
-  unit_conversion_rate: decimal("unit_conversion_rate", {
-    mode: "number",
-  }).notNull(),
   usage_unit: unitEnum("usage_unit").notNull(),
   yield_rate: decimal("yield_rate", { mode: "number" }).notNull(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
@@ -133,24 +141,29 @@ export const ingredients = pgTable("ingredients", {
     .notNull()
     .references(() => company.id),
 });
+export type Ingredient = typeof ingredient.$inferSelect;
 
 export const ingredient_categories = pgTable("ingredient_categories", {
   id: varchar("id", { length: 256 })
     .default(sql`gen_random_uuid()`)
     .primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
-  description: varchar("description", { length: 512 }).notNull(),
+  description: varchar("description", { length: 512 }),
   company_id: varchar("company_id", { length: 256 })
     .notNull()
     .references(() => company.id),
+  store_id: varchar("store_id", { length: 256 })
+    .notNull()
+    .references(() => stores.id),
 });
+export type IngredientCategory = typeof ingredient_categories.$inferSelect;
 
 export const ingredient_allergens = pgTable(
   "ingredient_allergens",
   {
     ingredient_id: varchar("ingredient_id", { length: 256 })
       .notNull()
-      .references(() => ingredients.id),
+      .references(() => ingredient.id),
     allergen_id: varchar("allergen_id", { length: 256 })
       .notNull()
       .references(() => allergens.id),
@@ -171,7 +184,7 @@ export const ingredient_tags = pgTable(
   {
     ingredient_id: varchar("ingredient_id", { length: 256 })
       .notNull()
-      .references(() => ingredients.id),
+      .references(() => ingredient.id),
     tag_id: varchar("tag_id", { length: 256 })
       .notNull()
       .references(() => ingredient_tag_lists.id),
@@ -192,11 +205,12 @@ export const ingredient_tag_lists = pgTable("ingredient_tag_lists", {
     .default(sql`gen_random_uuid()`)
     .primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
-  description: varchar("description", { length: 512 }).notNull(),
+  description: varchar("description", { length: 512 }),
   company_id: varchar("company_id", { length: 256 })
     .notNull()
     .references(() => company.id),
 });
+export type IngredientTagList = typeof ingredient_tag_lists.$inferSelect;
 
 export const ingredient_snapshots = pgTable("ingredient_snapshots", {
   id: varchar("id", { length: 256 })
@@ -204,7 +218,7 @@ export const ingredient_snapshots = pgTable("ingredient_snapshots", {
     .primaryKey(),
   ingredient_id: varchar("ingredient_id", { length: 256 })
     .notNull()
-    .references(() => ingredients.id),
+    .references(() => ingredient.id),
   snapshot_data: json("snapshot_data").notNull(),
   created_at: timestamp("created_at").notNull().defaultNow(),
   notes: varchar("notes", { length: 512 }),
@@ -214,9 +228,9 @@ export const ingredient_snapshots = pgTable("ingredient_snapshots", {
 });
 
 /* ****************** */
-/* preps */
+/* prep */
 /* ****************** */
-export const preps = pgTable("preps", {
+export const prep = pgTable("prep", {
   id: varchar("id", { length: 256 })
     .default(sql`gen_random_uuid()`)
     .primaryKey(),
@@ -226,7 +240,7 @@ export const preps = pgTable("preps", {
   store_id: varchar("store_id", { length: 256 })
     .notNull()
     .references(() => stores.id),
-  prep_category_id: varchar("prep_category_id", { length: 256 })
+  category_id: varchar("category_id", { length: 256 })
     .notNull()
     .references(() => prep_categories.id),
   image_url: varchar("image_url", { length: 2083 }),
@@ -240,6 +254,7 @@ export const preps = pgTable("preps", {
     .notNull()
     .references(() => company.id),
 });
+export type Prep = typeof prep.$inferSelect;
 
 export const prep_categories = pgTable("prep_categories", {
   id: varchar("id", { length: 256 })
@@ -250,14 +265,18 @@ export const prep_categories = pgTable("prep_categories", {
   company_id: varchar("company_id", { length: 256 })
     .notNull()
     .references(() => company.id),
+  store_id: varchar("store_id", { length: 256 })
+    .notNull()
+    .references(() => stores.id),
 });
+export type PrepCategory = typeof prep_categories.$inferSelect;
 
 export const prep_tags = pgTable(
   "prep_tags",
   {
     prep_id: varchar("prep_id", { length: 256 })
       .notNull()
-      .references(() => preps.id),
+      .references(() => prep.id),
     tag_id: varchar("tag_id", { length: 256 })
       .notNull()
       .references(() => prep_tag_lists.id),
@@ -278,11 +297,12 @@ export const prep_tag_lists = pgTable("prep_tag_lists", {
     .default(sql`gen_random_uuid()`)
     .primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
-  description: varchar("description", { length: 512 }).notNull(),
+  description: varchar("description", { length: 512 }),
   company_id: varchar("company_id", { length: 256 })
     .notNull()
     .references(() => company.id),
 });
+export type PrepTagList = typeof prep_tag_lists.$inferSelect;
 
 export const prep_snapshots = pgTable("prep_snapshots", {
   id: varchar("id", { length: 256 })
@@ -290,7 +310,7 @@ export const prep_snapshots = pgTable("prep_snapshots", {
     .primaryKey(),
   prep_id: varchar("prep_id", { length: 256 })
     .notNull()
-    .references(() => preps.id),
+    .references(() => prep.id),
   snapshot_data: json("snapshot_data").notNull(),
   created_at: timestamp("created_at").notNull().defaultNow(),
   notes: varchar("notes", { length: 512 }),
@@ -300,18 +320,21 @@ export const prep_snapshots = pgTable("prep_snapshots", {
 });
 
 /* ****************** */
-/* dishes */
+/* dish */
 /* ****************** */
-export const dishes = pgTable("dishes", {
+export const dish = pgTable("dish", {
   id: varchar("id", { length: 256 })
     .default(sql`gen_random_uuid()`)
     .primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
   name_ja: varchar("name_ja", { length: 256 }).notNull(),
   status: recipeStatusEnum("status").notNull(),
-  recipe_category_id: varchar("recipe_category_id", { length: 256 })
+  store_id: varchar("store_id", { length: 256 })
     .notNull()
-    .references(() => recipe_categories.id),
+    .references(() => stores.id),
+  category_id: varchar("category_id", { length: 256 })
+    .notNull()
+    .references(() => dish_categories.id),
   image_url: varchar("image_url", { length: 2083 }),
   description: varchar("description", { length: 1024 }).notNull(),
   instruction: varchar("instruction", { length: 2048 }).notNull(),
@@ -323,8 +346,9 @@ export const dishes = pgTable("dishes", {
     .notNull()
     .references(() => company.id),
 });
+export type Dish = typeof dish.$inferSelect;
 
-export const recipe_categories = pgTable("recipe_categories", {
+export const dish_categories = pgTable("dish_categories", {
   id: varchar("id", { length: 256 })
     .default(sql`gen_random_uuid()`)
     .primaryKey(),
@@ -333,12 +357,18 @@ export const recipe_categories = pgTable("recipe_categories", {
   company_id: varchar("company_id", { length: 256 })
     .notNull()
     .references(() => company.id),
+  store_id: varchar("store_id", { length: 256 })
+    .notNull()
+    .references(() => stores.id),
 });
+export type DishCategory = typeof dish_categories.$inferSelect;
 
 export const dish_tags = pgTable(
   "dish_tags",
   {
-    dish_id: varchar("dish_id", { length: 256 }).notNull(),
+    dish_id: varchar("dish_id", { length: 256 })
+      .notNull()
+      .references(() => dish.id),
     tag_id: varchar("tag_id", { length: 256 })
       .notNull()
       .references(() => dish_tag_lists.id),
@@ -359,11 +389,12 @@ export const dish_tag_lists = pgTable("dish_tag_lists", {
     .default(sql`gen_random_uuid()`)
     .primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
-  description: varchar("description", { length: 512 }).notNull(),
+  description: varchar("description", { length: 512 }),
   company_id: varchar("company_id", { length: 256 })
     .notNull()
     .references(() => company.id),
 });
+export type DishTagList = typeof dish_tag_lists.$inferSelect;
 
 export const dish_snapshots = pgTable("dish_snapshots", {
   id: varchar("id", { length: 256 })
@@ -371,7 +402,7 @@ export const dish_snapshots = pgTable("dish_snapshots", {
     .primaryKey(),
   dish_id: varchar("dish_id", { length: 256 })
     .notNull()
-    .references(() => dishes.id),
+    .references(() => dish.id),
   snapshot_data: json("snapshot_data").notNull(),
   created_at: timestamp("created_at").notNull().defaultNow(),
   notes: varchar("notes", { length: 512 }),
@@ -383,27 +414,33 @@ export const dish_snapshots = pgTable("dish_snapshots", {
 /* ****************** */
 /* recipe relations */
 /* ****************** */
-export const dishes_ingredients = pgTable("dishes_ingredients", {
-  dish_id: varchar("dish_id", { length: 256 }).notNull(),
-  ingredient_id: varchar("ingredient_id", { length: 256 }).notNull(),
+export const dish_ingredient = pgTable("dish_ingredient", {
+  dish_id: varchar("dish_id", { length: 256 })
+    .notNull()
+    .references(() => dish.id),
+  ingredient_id: varchar("ingredient_id", { length: 256 })
+    .notNull()
+    .references(() => ingredient.id),
   amount: decimal("amount", { mode: "number" }).notNull(),
   notes: varchar("notes", { length: 512 }),
 });
 
-export const dishes_ingredients_substitutes = pgTable(
-  "dishes_ingredients_substitutes",
+export const dish_ingredient_substitutes = pgTable(
+  "dish_ingredient_substitutes",
   {
-    dish_id: varchar("dish_id", { length: 256 }).notNull(),
+    dish_id: varchar("dish_id", { length: 256 })
+      .notNull()
+      .references(() => dish.id),
     original_ingredient_id: varchar("original_ingredient_id", {
       length: 256,
     })
       .notNull()
-      .references(() => ingredients.id),
+      .references(() => ingredient.id),
     substitute_ingredient_id: varchar("substitute_ingredient_id", {
       length: 256,
     })
       .notNull()
-      .references(() => ingredients.id),
+      .references(() => ingredient.id),
     amount: decimal("amount", { mode: "number" }).notNull(),
     notes: varchar("notes", { length: 512 }),
     company_id: varchar("company_id", { length: 256 })
@@ -421,11 +458,15 @@ export const dishes_ingredients_substitutes = pgTable(
   ]
 );
 
-export const dishes_preps = pgTable(
-  "dishes_preps",
+export const dish_prep = pgTable(
+  "dish_prep",
   {
-    dish_id: varchar("dish_id", { length: 256 }).notNull(),
-    prep_id: varchar("prep_id", { length: 256 }).notNull(),
+    dish_id: varchar("dish_id", { length: 256 })
+      .notNull()
+      .references(() => dish.id),
+    prep_id: varchar("prep_id", { length: 256 })
+      .notNull()
+      .references(() => prep.id),
     amount: decimal("amount", { mode: "number" }).notNull(),
     notes: varchar("notes", { length: 512 }),
     company_id: varchar("company_id", { length: 256 })
@@ -435,23 +476,25 @@ export const dishes_preps = pgTable(
   (table) => [
     primaryKey({
       columns: [table.dish_id, table.prep_id],
-      name: "dishes_preps_pk",
+      name: "dish_prep_pk",
     }),
   ]
 );
 
-export const preps_preps_substitutes = pgTable(
-  "preps_preps_substitutes",
+export const prep_prep_substitutes = pgTable(
+  "prep_prep_substitutes",
   {
-    prep_id: varchar("prep_id", { length: 256 }).notNull(),
+    prep_id: varchar("prep_id", { length: 256 })
+      .notNull()
+      .references(() => prep.id),
     original_child_prep_id: varchar("original_child_prep_id", { length: 256 })
       .notNull()
-      .references(() => preps.id),
+      .references(() => prep.id),
     substitute_child_prep_id: varchar("substitute_child_prep_id", {
       length: 256,
     })
       .notNull()
-      .references(() => preps.id),
+      .references(() => prep.id),
     amount: decimal("amount", { mode: "number" }).notNull(),
     notes: varchar("notes", { length: 512 }),
     company_id: varchar("company_id", { length: 256 })
@@ -469,15 +512,15 @@ export const preps_preps_substitutes = pgTable(
   ]
 );
 
-export const preps_preps = pgTable(
-  "preps_preps",
+export const prep_prep = pgTable(
+  "prep_prep",
   {
     parent_prep_id: varchar("parent_prep_id", { length: 256 })
       .notNull()
-      .references(() => preps.id),
+      .references(() => prep.id),
     child_prep_id: varchar("child_prep_id", { length: 256 })
       .notNull()
-      .references(() => preps.id),
+      .references(() => prep.id),
     amount: decimal("amount", { mode: "number" }).notNull(),
     notes: varchar("notes", { length: 512 }),
     company_id: varchar("company_id", { length: 256 })
@@ -487,16 +530,20 @@ export const preps_preps = pgTable(
   (table) => [
     primaryKey({
       columns: [table.parent_prep_id, table.child_prep_id],
-      name: "preps_preps_pk",
+      name: "prep_prep_pk",
     }),
   ]
 );
 
-export const preps_ingredients = pgTable(
-  "preps_ingredients",
+export const prep_ingredient = pgTable(
+  "prep_ingredient",
   {
-    prep_id: varchar("prep_id", { length: 256 }).notNull(),
-    ingredient_id: varchar("ingredient_id", { length: 256 }).notNull(),
+    prep_id: varchar("prep_id", { length: 256 })
+      .notNull()
+      .references(() => prep.id),
+    ingredient_id: varchar("ingredient_id", { length: 256 })
+      .notNull()
+      .references(() => ingredient.id),
     amount: decimal("amount", { mode: "number" }).notNull(),
     notes: varchar("notes", { length: 512 }),
     company_id: varchar("company_id", { length: 256 })
@@ -506,7 +553,7 @@ export const preps_ingredients = pgTable(
   (table) => [
     primaryKey({
       columns: [table.prep_id, table.ingredient_id],
-      name: "preps_ingredients_pk",
+      name: "prep_ingredient_pk",
     }),
   ]
 );
@@ -520,7 +567,7 @@ export const users = pgTable("users", {
     .primaryKey(),
   email: varchar("email", { length: 256 }).notNull().unique(),
   name: varchar("name", { length: 256 }).notNull(),
-  role: varchar("role", { length: 50 }).notNull(),
+  role: roleEnum("role").notNull(),
   store_id: varchar("store_id", { length: 256 })
     .notNull()
     .references(() => stores.id),
@@ -542,4 +589,21 @@ export const company = pgTable("company", {
   address: varchar("address", { length: 512 }),
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/* ****************** */
+/* view */
+/* ****************** */
+export const prep_view = pgView("prep_view", {
+  prep_id: varchar("prep_id", { length: 256 })
+    .notNull()
+    .references(() => prep.id),
+  prep_name: varchar("prep_name", { length: 256 }).notNull(),
+  child_prep_id: varchar("child_prep_id", { length: 256 })
+    .notNull()
+    .references(() => prep.id),
+  ingredient_id: varchar("ingredient_id", { length: 256 })
+    .notNull()
+    .references(() => ingredient.id),
+  ingredient_name: varchar("ingredient_name", { length: 256 }).notNull(),
 });

@@ -1,9 +1,9 @@
 "use client";
 
 import { FormEvent } from "react";
-import LabeledInput from "@/components/form/LabeledInput";
 import SubmitBtn from "@/components/form/SubmitBtn";
 import { createInitialAdmin } from "@/lib/api/admin";
+import LabeledInput from "@/components/form/LabeledInput";
 
 export default function SignupPage() {
 
@@ -13,9 +13,11 @@ export default function SignupPage() {
 		const formData = new FormData(event.currentTarget);
 		const email = formData.get("email") as string;
 		const password = formData.get("password") as string;
+		const name = formData.get("name") as string;
+		const company_name = formData.get("company_name") as string;
 
 		try {
-			await createInitialAdmin(email, password);
+			await createInitialAdmin(email, password, name, company_name);
 		} catch (error) {
 			console.error("Error creating initial admin:", error);
 		}
@@ -24,9 +26,11 @@ export default function SignupPage() {
 	return (
 		<form onSubmit={handleSubmit} className="flex flex-col gap-4">
 			<h1 className="text-2xl text-center font-bold">Sign Up</h1>
-			<LabeledInput label="Email" id="email" name="email" type="email" required />
-			<LabeledInput label="Password" id="password" name="password" type="password" required />
-			<SubmitBtn label="Create Account" />
+			<LabeledInput labelName="email" placeholder="email" type="email" />
+			<LabeledInput labelName="password" placeholder="password" type="password" />
+			<LabeledInput labelName="name" placeholder="name" type="text" />
+			<LabeledInput labelName="company_name" placeholder="company name" type="text" />
+			<SubmitBtn label="Create Account"/>
 		</form>
 
 	);

@@ -1,31 +1,34 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Home, Search, Settings } from "lucide-react";
+import { ChefHat, ChevronLeft, ChevronRight, Home, User } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { useUserContext } from "@/context/UserContext";
 
-const Sidebar = () => {
+const Sidebar = ({ className }: { className?: string }) => {
+
+	const userInfo = useUserContext();
 	const [isOpen, setIsOpen] = useState(true);
 	const pathname = usePathname();
 
 	const navItems = [
-		{ href: "/dashboard", label: "Home", Icon: Home, addionalClasses: "" },
-		{ href: "/dashboard/search", label: "Search", Icon: Search, addionalClasses: "" },
-		{ href: "/dashboard/settings", label: "Settings", Icon: Settings, addionalClasses: "mt-auto" },
+		{ href: "/home", label: "Home", Icon: Home, addionalClasses: "" },
+		{ href: "/recipe", label: "Recipe", Icon: ChefHat, addionalClasses: "" },
+		{ href: "/profile", label: userInfo.name, Icon: User, addionalClasses: "mt-auto" },
 	];
 
 	return (
-		<aside className={`relative flex flex-col text-primary-500 bg-gray-50 h-screen py-5 px-3 ease-in-out duration-300 ${isOpen ? "w-50" : "w-20"}`}>
-			<div className="absolute -right-3 top-6 rounded-full bg-primary-900 text-primary-50 flex justify-center items-center">
+		<aside className={`hidden relative md:flex flex-col text-primary-500 bg-gray-50 h-screen py-5 px-3 ease-in-out duration-300 ${isOpen ? "w-52" : "w-20"} ${className}`}>
+			<div className="absolute -right-3 top-6 rounded-full bg-primary-900 text-primary-50 flex justify-center items-center z-50">
 				{
 					isOpen ?
 						(<ChevronLeft width={30} height={30} onClick={() => setIsOpen(false)} />)
 						: (<ChevronRight width={30} height={30} onClick={() => setIsOpen(true)} />)
 				}
 			</div>
-			<Link href="/dashboard">
+			<Link href="/home">
 				<div className="flex gap-1 justify-center items-center mb-10">
 					<div>
 						<Image src="/logo.png" alt="Logo" width={40} height={40} />

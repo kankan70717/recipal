@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, Search, Settings } from "lucide-react";
+import { ChefHat, Home, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -8,28 +8,29 @@ const BottomNav = () => {
 	const pathname = usePathname();
 
 	const navItems = [
-		{ href: "/dashboard", label: "Home", Icon: Home },
-		{ href: "/dashboard/search", label: "Search", Icon: Search },
-		{ href: "/dashboard/settings", label: "Settings", Icon: Settings },
+		{ href: "/home", label: "Home", Icon: Home },
+		{ href: "/recipe", label: "Recipe", Icon: ChefHat },
+		{ href: "/profile", label: "Profile", Icon: Settings },
 	];
 
 	return (
-		<nav className="block md:hidden fixed bottom-0 w-full rounded-t-2xl shadow-3xl bg-gray-50 px-4 pt-5 pb-6">
-			<ul className="flex justify-evenly gap-3">
-				{navItems.map(({ href, Icon }) => {
+		<nav className="block md:hidden fixed bottom-0 w-full rounded-t-2xl shadow-3xl px-4 pt-2 pb-5 ">
+			<ul className="flex justify-evenly gap-3 rounded-full py-2 shadow-2xl bg-primary-50">
+				{navItems.map(({ href, Icon, label }) => {
 					const isActive = pathname === href;
 
 					return (
-						<li key={href} className={`rounded-full py-1 px-3 ${isActive ? " bg-primary-50" : ""}`}>
-							<Link
-								href={href}
-								className={`flex flex-col items-center gap-1 py-2 rounded-md transition-colors`}>
+						<Link
+							href={href}
+							key={label}
+							className={`rounded-full p-3 ${isActive ? " bg-white text-primary-500" : ""}`}>
+							<li key={href} className={`flex items-center justify-center`}>
 								<Icon
 									width={25}
 									height={25}
 								/>
-							</Link>
-						</li>
+							</li>
+						</Link>
 					);
 				})}
 			</ul>
